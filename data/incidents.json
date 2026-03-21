@@ -1,0 +1,29 @@
+[
+  {
+    "service": "payments-api",
+    "criticality": "critical",
+    "impacted_users": 18500,
+    "error_rate": 17.2,
+    "latency_ms": 1850,
+    "alerts": 23,
+    "category": "availability"
+  },
+  {
+    "service": "identity-gateway",
+    "criticality": "high",
+    "impacted_users": 6200,
+    "error_rate": 8.4,
+    "latency_ms": 980,
+    "alerts": 11,
+    "category": "security"
+  },
+  {
+    "service": "analytics-worker",
+    "criticality": "medium",
+    "impacted_users": 900,
+    "error_rate": 2.1,
+    "latency_ms": 2400,
+    "alerts": 6,
+    "category": "latency"
+  }
+]

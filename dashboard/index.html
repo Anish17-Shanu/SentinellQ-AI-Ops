@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentinelIQ AI Ops</title>
+    <link rel="stylesheet" href="/dashboard/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">AI Ops Console</p>
+        <h1>SentinelIQ</h1>
+        <p class="lede">Explainable incident scoring with local persistence, team ownership context, and response playbooks.</p>
+      </section>
+      <section class="summary-grid" id="summary-grid"></section>
+      <section class="layout">
+        <section class="panel">
+          <h2>Create Incident</h2>
+          <form id="incident-form" class="stack">
+            <input name="service" placeholder="Service name" required />
+            <input name="owner" placeholder="Owner team" required />
+            <input name="environment" placeholder="Environment" value="production" required />
+            <select name="criticality">
+              <option>low</option>
+              <option selected>medium</option>
+              <option>high</option>
+              <option>critical</option>
+            </select>
+            <select name="category">
+              <option>availability</option>
+              <option>security</option>
+              <option>data</option>
+              <option>latency</option>
+            </select>
+            <input name="impacted_users" type="number" placeholder="Impacted users" required />
+            <input name="error_rate" type="number" step="0.1" placeholder="Error rate" required />
+            <input name="latency_ms" type="number" step="0.1" placeholder="Latency ms" required />
+            <input name="alerts" type="number" placeholder="Alert count" required />
+            <textarea name="description" placeholder="Incident description"></textarea>
+            <button type="submit">Store Incident</button>
+          </form>
+          <p class="status" id="status">Ready.</p>
+        </section>
+        <section class="panel">
+          <h2>Incident Queue</h2>
+          <div id="incident-list" class="list"></div>
+        </section>
+      </section>
+    </main>
+    <script src="/dashboard/app.js"></script>
+  </body>
+</html>
