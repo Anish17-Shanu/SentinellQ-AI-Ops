@@ -1,3 +1,5 @@
+"""SentinelIQ AI Ops server created by Anish Kumar."""
+
 import json
 import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
