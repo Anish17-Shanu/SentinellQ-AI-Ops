@@ -1,4 +1,4 @@
-"""SentinelIQ AI Ops server created by Anish Kumar."""
+"""SentinelIQ AI Ops server created by ANISH KUMAR."""
 
 import json
 import mimetypes
