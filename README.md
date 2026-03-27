@@ -2,8 +2,8 @@
 
 ## Creator
 
-This project was created, written, and maintained by **ANISH KUMAR**.
-All primary documentation in this README is presented as the work of **ANISH KUMAR**.
+This project was created, written, and maintained by **Anish Kumar**.
+All primary documentation in this README is presented as the work of **Anish Kumar**.
 
 SentinelIQ AI Ops is an explainable incident-prioritization service for platform teams. It takes live incident signals, stores incidents locally, scores business risk, recommends response actions, and returns a confidence-backed explanation layer that is portfolio-ready and easy to extend.
 
