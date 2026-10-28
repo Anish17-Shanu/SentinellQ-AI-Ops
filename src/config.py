@@ -14,6 +14,7 @@ VERSION = "2.0.0"
 
 VALID_BACKENDS = {"json", "sqlite", "postgres"}
 VALID_ROLES = {"viewer", "responder", "admin"}
+VALID_ANONYMOUS_ROLES = VALID_ROLES | {"disabled"}
 VALID_PRIORITIES = {"P1", "P2", "P3", "P4"}
 
 
@@ -75,6 +76,7 @@ class Settings:
     config_dir: Path
     api_keys: str
     auth_required: bool
+    anonymous_role: str
     rate_limit_rpm: int
     max_body_bytes: int
     request_timeout_seconds: float
@@ -127,9 +129,23 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         raise ConfigError("SENTINELIQ_LOG_LEVEL is invalid")
 
     api_keys = _env(env, "SENTINELIQ_API_KEYS", "")
-    auth_required = _env_bool(env, "SENTINELIQ_AUTH_REQUIRED", bool(api_keys))
+    anonymous_role = _env(env, "SENTINELIQ_ANONYMOUS_ROLE", "").lower()
+    if anonymous_role and anonymous_role not in VALID_ANONYMOUS_ROLES:
+        raise ConfigError("SENTINELIQ_ANONYMOUS_ROLE must be disabled, viewer, responder, or admin")
+    if not anonymous_role:
+        anonymous_role = "disabled" if api_keys else "admin"
+
+    auth_required = _env_bool(
+        env,
+        "SENTINELIQ_AUTH_REQUIRED",
+        bool(api_keys) and anonymous_role == "disabled",
+    )
     if auth_required and not api_keys:
         raise ConfigError("SENTINELIQ_AUTH_REQUIRED=true requires SENTINELIQ_API_KEYS to be set")
+    if auth_required and anonymous_role != "disabled":
+        raise ConfigError("SENTINELIQ_ANONYMOUS_ROLE must be disabled when SENTINELIQ_AUTH_REQUIRED=true")
+    if anonymous_role == "disabled" and not api_keys:
+        raise ConfigError("SENTINELIQ_ANONYMOUS_ROLE=disabled requires SENTINELIQ_API_KEYS to be set")
 
     settings = Settings(
         env=profile,
@@ -143,6 +159,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         config_dir=ROOT / "config",
         api_keys=api_keys,
         auth_required=auth_required,
+        anonymous_role=anonymous_role,
         rate_limit_rpm=_env_int(env, "SENTINELIQ_RATE_LIMIT_RPM", 120, 0, 100000),
         max_body_bytes=_env_int(env, "SENTINELIQ_MAX_BODY_BYTES", 262144, 1024, 10485760),
         request_timeout_seconds=_env_float(env, "SENTINELIQ_REQUEST_TIMEOUT", 15.0, 1.0),

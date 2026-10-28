@@ -4,6 +4,15 @@ All notable changes to SentinelIQ are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `SENTINELIQ_ANONYMOUS_ROLE` (`disabled`, `viewer`, `responder`, or `admin`) controls
+  requests without an API key. `viewer` makes a public instance keyless and read-only;
+  writes and admin routes return `403`. Defaults preserve existing behavior: `admin`
+  without keys, `disabled` with keys.
+
 ## [2.0.0] — 2026-10-29
 
 First production-grade release. Implements the roadmap through Phase 4 (security, operability

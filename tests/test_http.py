@@ -57,6 +57,23 @@ class HttpServerCase(unittest.TestCase):
         return payload
 
 
+class AnonymousViewerTests(HttpServerCase):
+    env = {"SENTINELIQ_ANONYMOUS_ROLE": "viewer"}
+
+    def test_reads_are_public_and_writes_are_forbidden(self):
+        status, _, _, _ = self.request("GET", "/v1/summary")
+        self.assertEqual(status, 200)
+        status, _, payload, _ = self.request("GET", "/v1/incidents")
+        self.assertEqual(status, 200)
+
+        status, _, payload, _ = self.request("POST", "/v1/incidents", incident())
+        self.assertEqual(status, 403)
+        self.assertIn("viewer", payload["error"]["message"])
+
+        status, _, _, _ = self.request("GET", "/metrics")
+        self.assertEqual(status, 403)
+
+
 class CoreRouteTests(HttpServerCase):
     def test_health_and_security_headers(self):
         status, headers, payload, _ = self.request("GET", "/health", headers={"X-Request-Id": "req-123"})

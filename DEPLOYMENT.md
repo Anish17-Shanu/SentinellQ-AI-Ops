@@ -94,6 +94,7 @@ Serverless functions have no durable disk, so **do not use JSON or SQLite on Ver
 | `DATABASE_URL` | `postgresql://...` | Connection string |
 | `SENTINELIQ_API_KEYS` | `key:role:tenant,...` | Auth and tenant isolation — required for a public URL |
 | `SENTINELIQ_AUTH_REQUIRED` | `true` | Fail closed |
+| `SENTINELIQ_ANONYMOUS_ROLE` | `viewer` | Keyless read-only public demo; default is `disabled` when keys are set |
 | `SENTINELIQ_CRON_SECRET` | long random string | Protects `/v1/cron/tick` |
 | `CRON_SECRET` | same value | Vercel sends it automatically to cron invocations |
 | `SENTINELIQ_NOTIFY_WEBHOOK_URL` | optional Slack webhook | Outbound notifications |
@@ -101,6 +102,11 @@ Serverless functions have no durable disk, so **do not use JSON or SQLite on Ver
 
 The Python runtime installs [`requirements.txt`](requirements.txt), which contains only
 the optional `psycopg` driver.
+
+For a fully public, keyless demo, omit `SENTINELIQ_API_KEYS` and set
+`SENTINELIQ_ANONYMOUS_ROLE=viewer`. Visitors can browse and score, but cannot create,
+transition, ingest, delete, export/import, or read `/metrics`. Seed demo incidents with
+`python scripts/cli.py seed` before the first deploy.
 
 ### 3.3 Deploy
 

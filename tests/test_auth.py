@@ -21,6 +21,34 @@ class AuthenticatorTests(unittest.TestCase):
         self.assertFalse(identity.authenticated)
         self.assertFalse(auth.enabled)
 
+    def test_anonymous_viewer_is_read_only(self):
+        auth = Authenticator("", "default", required=False, anonymous_role="viewer")
+        identity = auth.identify({})
+        self.assertIsNotNone(identity)
+        self.assertEqual((identity.role, identity.tenant), ("viewer", "default"))
+        self.assertFalse(identity.authenticated)
+        self.assertIs(auth.require(identity, "viewer"), identity)
+        with self.assertRaises(ForbiddenError):
+            auth.require(identity, "responder")
+
+    def test_anonymous_disabled_rejects_missing_key(self):
+        auth = Authenticator(KEYS, "default", required=True, anonymous_role="disabled")
+        self.assertIsNone(auth.identify({}))
+        with self.assertRaises(AuthError):
+            auth.require(None, "viewer")
+
+    def test_invalid_key_does_not_fall_back_to_anonymous(self):
+        auth = Authenticator(KEYS, "default", required=False, anonymous_role="viewer")
+        self.assertIsNone(auth.identify({"x-api-key": "wrong-key-000000"}))
+
+    def test_rejects_bad_anonymous_role(self):
+        with self.assertRaises(ConfigError):
+            Authenticator("", "default", required=False, anonymous_role="owner")
+
+    def test_required_auth_rejects_anonymous_access(self):
+        with self.assertRaises(ConfigError):
+            Authenticator(KEYS, "default", required=True, anonymous_role="viewer")
+
     def test_parses_roles_and_tenants(self):
         auth = Authenticator(KEYS, "default", required=True)
         self.assertTrue(auth.enabled)

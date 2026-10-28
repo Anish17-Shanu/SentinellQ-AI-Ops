@@ -32,6 +32,10 @@ behalf of users.
 ### Authentication
 
 - API keys are configured through `SENTINELIQ_API_KEYS` as `key:role:tenant` entries.
+- Unauthenticated access is controlled by `SENTINELIQ_ANONYMOUS_ROLE`: `disabled` (default
+  with keys) rejects missing keys, `viewer` allows public read-only access, and `admin`
+  (default without keys) is local-demo behavior. Never use `viewer` and `admin` on an
+  untrusted network without reviewing the exposed data.
 - Only SHA-256 digests are held in memory; the raw key is never written to disk or logs.
 - Keys must be at least 12 characters. Generate them with at least 128 bits of entropy,
   for example `python -c "import secrets; print(secrets.token_urlsafe(32))"`.

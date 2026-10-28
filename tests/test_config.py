@@ -15,6 +15,7 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.max_body_bytes, 262144)
         self.assertEqual(settings.default_tenant, "default")
         self.assertFalse(settings.auth_required)
+        self.assertEqual(settings.anonymous_role, "admin")
 
     def test_overrides_are_applied(self):
         settings = make_settings(
@@ -54,7 +55,39 @@ class SettingsTests(unittest.TestCase):
     def test_auth_is_implied_by_keys(self):
         settings = make_settings(".", SENTINELIQ_API_KEYS="viewer-key-123456:viewer:acme")
         self.assertTrue(settings.auth_required)
+        self.assertEqual(settings.anonymous_role, "disabled")
         self.assertTrue(settings.production is False)
+
+    def test_anonymous_viewer_mode(self):
+        settings = make_settings(".", SENTINELIQ_ANONYMOUS_ROLE="viewer")
+        self.assertEqual(settings.anonymous_role, "viewer")
+        self.assertFalse(settings.auth_required)
+
+    def test_keys_with_anonymous_viewer(self):
+        settings = make_settings(
+            ".",
+            SENTINELIQ_API_KEYS="viewer-key-123456:viewer:acme",
+            SENTINELIQ_ANONYMOUS_ROLE="viewer",
+        )
+        self.assertFalse(settings.auth_required)
+        self.assertEqual(settings.anonymous_role, "viewer")
+
+    def test_anonymous_disabled_needs_keys(self):
+        with self.assertRaises(ConfigError):
+            make_settings(".", SENTINELIQ_ANONYMOUS_ROLE="disabled")
+
+    def test_anonymous_viewer_conflicts_with_required_auth(self):
+        with self.assertRaises(ConfigError):
+            make_settings(
+                ".",
+                SENTINELIQ_API_KEYS="viewer-key-123456:viewer:acme",
+                SENTINELIQ_AUTH_REQUIRED="true",
+                SENTINELIQ_ANONYMOUS_ROLE="viewer",
+            )
+
+    def test_rejects_unknown_anonymous_role(self):
+        with self.assertRaises(ConfigError):
+            make_settings(".", SENTINELIQ_ANONYMOUS_ROLE="owner")
 
     def test_production_profile(self):
         settings = make_settings(".", SENTINELIQ_ENV="production")

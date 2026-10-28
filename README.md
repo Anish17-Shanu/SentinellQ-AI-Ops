@@ -35,6 +35,12 @@ python src/server.py
 
 Open <http://127.0.0.1:8081/dashboard/>. The API is at `http://127.0.0.1:8081`.
 
+For a keyless, read-only public demo:
+
+```bash
+SENTINELIQ_ANONYMOUS_ROLE=viewer python src/server.py
+```
+
 Seed demo data (optional):
 
 ```bash
@@ -88,9 +94,17 @@ all reads and writes are scoped to that tenant.
 When no keys are configured, the service runs as a single anonymous tenant and logs a
 warning in production. Set `SENTINELIQ_AUTH_REQUIRED=true` to make missing keys fatal.
 
+For a public, keyless demo set `SENTINELIQ_ANONYMOUS_ROLE=viewer` and leave
+`SENTINELIQ_API_KEYS` empty. Visitors can read incidents, summary, and playbooks without
+a key; creates, transitions, ingest, admin routes, and `/metrics` return `403`. The default
+is `admin` when no keys are configured (local behavior) and `disabled` when keys exist.
+`disabled` requires keys, and `SENTINELIQ_AUTH_REQUIRED=true` cannot be combined with a
+non-disabled anonymous role. Anonymous requests are scoped to `SENTINELIQ_DEFAULT_TENANT`
+and are rate-limited per IP.
+
 | Role | Can do |
 | --- | --- |
-| public | `/health`, `/ready`, `/openapi.json`, dashboard static files |
+| public | `/health`, `/ready`, `/openapi.json`, dashboard static files; reads too when `SENTINELIQ_ANONYMOUS_ROLE=viewer` |
 | `viewer` | List/detail incidents, summary, playbooks, score preview |
 | `responder` | Everything a viewer can, plus create, transition, and ingest alerts |
 | `admin` | Everything a responder can, plus delete, export, import, and `/metrics` |

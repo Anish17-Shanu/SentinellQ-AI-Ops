@@ -204,7 +204,7 @@ semantics and is capped at 1,000 records per request.
 
 Tenant isolation is a storage-level invariant: every repository method takes a tenant and
 filters on it. The router derives the tenant from the API key (or the configured default
-when auth is disabled). A tenant cannot influence another tenant's data through filters,
+for the anonymous role). A tenant cannot influence another tenant's data through filters,
 pagination, exports, or idempotency keys.
 
 ## Deployment topology

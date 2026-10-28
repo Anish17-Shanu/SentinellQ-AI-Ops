@@ -10,6 +10,7 @@ from util import sha256_hex
 
 ROLE_RANK = {"viewer": 1, "responder": 2, "admin": 3}
 VALID_ROLES = set(ROLE_RANK)
+VALID_ANONYMOUS_ROLES = VALID_ROLES | {"disabled"}
 
 
 @dataclass(frozen=True)
@@ -28,13 +29,27 @@ class _KeyRecord:
 
 
 class Authenticator:
-    def __init__(self, api_keys: str, default_tenant: str, required: bool) -> None:
+    def __init__(
+        self,
+        api_keys: str,
+        default_tenant: str,
+        required: bool,
+        anonymous_role: str | None = None,
+    ) -> None:
         self.default_tenant = default_tenant
         self.required = required
         self._keys: dict[str, _KeyRecord] = {}
         self._parse(api_keys)
         if required and not self._keys:
             raise ConfigError("Authentication is required but no API keys are configured")
+        if anonymous_role is None:
+            anonymous_role = "disabled" if self._keys else "admin"
+        anonymous_role = anonymous_role.strip().lower()
+        if anonymous_role not in VALID_ANONYMOUS_ROLES:
+            raise ConfigError("Anonymous role must be disabled, viewer, responder, or admin")
+        if required and anonymous_role != "disabled":
+            raise ConfigError("Anonymous access must be disabled when authentication is required")
+        self.anonymous_role = anonymous_role
 
     def _parse(self, raw: str) -> None:
         for entry in (part.strip() for part in raw.split(",") if part.strip()):
@@ -61,15 +76,20 @@ class Authenticator:
         return bool(self._keys)
 
     def identify(self, headers: Mapping[str, str]) -> Identity | None:
-        if not self._keys:
-            return Identity(role="admin", tenant=self.default_tenant, label="anonymous", authenticated=False)
         presented = self._extract_key(headers)
-        if not presented:
+        if presented:
+            record = self._keys.get(sha256_hex(presented))
+            if record is None:
+                return None
+            return Identity(role=record.role, tenant=record.tenant, label=record.label, authenticated=True)
+        if self.anonymous_role == "disabled":
             return None
-        record = self._keys.get(sha256_hex(presented))
-        if record is None:
-            return None
-        return Identity(role=record.role, tenant=record.tenant, label=record.label, authenticated=True)
+        return Identity(
+            role=self.anonymous_role,
+            tenant=self.default_tenant,
+            label="anonymous",
+            authenticated=False,
+        )
 
     @staticmethod
     def _extract_key(headers: Mapping[str, str]) -> str | None:

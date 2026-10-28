@@ -50,7 +50,12 @@ def build_context(
     repository = repository or build_repository(settings, assessor)
     notifier = notifier if notifier is not None else WebhookNotifier(settings.notify_webhook_url)
     service = IncidentService(repository, settings, score_config, playbooks, metrics, notifier)
-    authenticator = Authenticator(settings.api_keys, settings.default_tenant, settings.auth_required)
+    authenticator = Authenticator(
+        settings.api_keys,
+        settings.default_tenant,
+        settings.auth_required,
+        settings.anonymous_role,
+    )
     limiter = TokenBucketLimiter(settings.rate_limit_rpm)
     router = Router(settings, service, authenticator, limiter, metrics)
 
@@ -63,7 +68,10 @@ def build_context(
             logger.warning("demo seeding skipped: %s", exc)
 
     if settings.production and not authenticator.enabled:
-        logger.warning("authentication is disabled; writes are open to anyone who can reach the service")
+        logger.warning(
+            "authentication is disabled; anonymous requests run as '%s'",
+            authenticator.anonymous_role,
+        )
 
     return AppContext(
         settings=settings,
