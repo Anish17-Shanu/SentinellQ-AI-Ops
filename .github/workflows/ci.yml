@@ -40,7 +40,7 @@ jobs:
         run: python scripts/cold_start.py --runs 3 --budget-ms 2000
       - name: Smoke test the server
         run: |
-          python src/server.py --port 8099 &
+          python src/server.py &
           SERVER_PID=$!
           for _ in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:8099/health > /dev/null; then break; fi
@@ -53,6 +53,7 @@ jobs:
         env:
           SENTINELIQ_ENV: test
           SENTINELIQ_AUTO_SEED: "false"
+          PORT: "8099"
 
   dashboard:
     name: dashboard assets
