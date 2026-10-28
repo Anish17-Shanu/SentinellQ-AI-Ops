@@ -493,3 +493,165 @@ async function boot() {
 }
 
 boot();
+
+// -- Extended Endpoints UI: Tabs, Scoring, Playbooks, Ingest ----------
+document.querySelectorAll('.tab-btn[data-tab]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn[data-tab]').forEach((b) => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.tab-content').forEach((panel) => {
+      panel.classList.remove('active');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    const target = document.getElementById(btn.dataset.tab);
+    if (target) target.classList.add('active');
+    if (btn.dataset.tab === 'tab-playbooks') loadPlaybooks();
+  });
+});
+
+const simForm = document.getElementById('score-simulator-form');
+if (simForm) {
+  simForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('sim-submit-btn');
+    btn.disabled = true;
+    try {
+      const payload = {
+        service: document.getElementById('sim-service').value.trim(),
+        criticality: document.getElementById('sim-criticality').value,
+        category: document.getElementById('sim-category').value,
+        impacted_users: Number(document.getElementById('sim-users').value) || 0,
+        error_rate: Number(document.getElementById('sim-error-rate').value) || 0,
+        latency_ms: Number(document.getElementById('sim-latency').value) || 0,
+        alerts: Number(document.getElementById('sim-alerts').value) || 0,
+      };
+      const hint = document.getElementById('sim-hint').value;
+      if (hint) payload.priority_hint = hint;
+      const result = await request('/v1/score', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const badge = document.getElementById('sim-priority-badge');
+      badge.textContent = result.priority;
+      badge.className = 'badge p-' + result.priority.toLowerCase();
+      document.getElementById('sim-score-num').textContent = result.score_100;
+      document.getElementById('sim-explanation').textContent = result.explanation || 'Calculated successfully.';
+
+      const factorsContainer = document.getElementById('sim-factors-container');
+      factorsContainer.replaceChildren();
+      if (result.factors && typeof result.factors === 'object') {
+        const table = el('table', { class: 'factors-table' },
+          el('thead', {},
+            el('tr', {}, el('th', { text: 'Factor / Dimension' }), el('th', { text: 'Penalty / Multiplier' }))
+          ),
+          el('tbody', {},
+            Object.entries(result.factors).map(([k, v]) =>
+              el('tr', {}, el('td', { text: k.replace(/_/g, ' ') }), el('td', { text: String(v) }))
+            )
+          )
+        );
+        factorsContainer.appendChild(table);
+      }
+    } catch (err) {
+      handleError(err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+async function loadPlaybooks() {
+  const container = document.getElementById('playbooks-container');
+  if (!container) return;
+  try {
+    container.innerHTML = '<p class="hint">Fetching playbooks from /v1/playbooks&hellip;</p>';
+    const playbooks = await request('/v1/playbooks');
+    container.replaceChildren();
+    const entries = Object.entries(playbooks);
+    if (!entries.length) {
+      container.innerHTML = '<p class="hint">No playbooks found.</p>';
+      return;
+    }
+    for (const [key, steps] of entries) {
+      const card = el('article', { class: 'playbook-card' },
+        el('h3', {},
+          el('span', { text: key }),
+          el('span', { class: 'badge', text: steps.length + ' step(s)' })
+        ),
+        el('ol', {}, steps.map((s) => el('li', { text: s })))
+      );
+      container.appendChild(card);
+    }
+  } catch (err) {
+    container.innerHTML = '<p class="hint" style="color:var(--danger)">Failed to load playbooks: ' + err.message + '</p>';
+  }
+}
+const reloadPlaybooksBtn = document.getElementById('reload-playbooks-btn');
+if (reloadPlaybooksBtn) reloadPlaybooksBtn.addEventListener('click', loadPlaybooks);
+
+const sampleIngestPayloads = {
+  generic: JSON.stringify({
+    service: 'payments-api',
+    criticality: 'critical',
+    category: 'availability',
+    impacted_users: 2500,
+    error_rate: 15.2,
+    latency_ms: 600,
+    alerts: 10,
+    description: 'High error rate detected on payment processor'
+  }, null, 2),
+  pagerduty: JSON.stringify({
+    event_type: 'trigger',
+    client: 'Datadog',
+    description: 'Payments API latency spike above SLA threshold',
+    service: 'payments-api',
+    severity: 'critical',
+    details: { impacted_users: 1500, latency_ms: 1200, error_rate: 6.4 }
+  }, null, 2),
+  datadog: JSON.stringify({
+    title: 'Service identity-gateway 5xx errors exceeding 10%',
+    event_type: 'error',
+    priority: 'normal',
+    tags: ['env:production', 'service:identity-gateway'],
+    body: 'Automated alert from synthetic monitor'
+  }, null, 2)
+};
+
+const ingestSourceSelect = document.getElementById('ingest-source');
+const ingestPayloadArea = document.getElementById('ingest-payload');
+if (ingestSourceSelect && ingestPayloadArea) {
+  ingestPayloadArea.value = sampleIngestPayloads[ingestSourceSelect.value] || sampleIngestPayloads.generic;
+  ingestSourceSelect.addEventListener('change', () => {
+    ingestPayloadArea.value = sampleIngestPayloads[ingestSourceSelect.value] || sampleIngestPayloads.generic;
+  });
+}
+
+const ingestForm = document.getElementById('ingest-sim-form');
+if (ingestForm) {
+  ingestForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('ingest-submit-btn');
+    const preview = document.getElementById('ingest-response-preview');
+    const statusText = document.getElementById('ingest-status');
+    btn.disabled = true;
+    statusText.textContent = 'Posting webhook alert...';
+    try {
+      const source = ingestSourceSelect.value;
+      const body = JSON.parse(ingestPayloadArea.value);
+      const res = await request('/v1/ingest/' + source, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      statusText.textContent = 'Webhook accepted successfully!';
+      preview.textContent = JSON.stringify(res, null, 2);
+    } catch (err) {
+      statusText.textContent = 'Webhook failed: ' + err.message;
+      preview.textContent = JSON.stringify({ error: err.message, status: err.status || 500 }, null, 2);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}

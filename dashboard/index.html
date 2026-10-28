@@ -33,141 +33,269 @@
         </div>
       </header>
 
-      <section class="summary-grid" id="summary-grid" aria-label="Incident summary">
-        <article class="stat"><p class="eyebrow">Total</p><h2 id="stat-total">&mdash;</h2></article>
-        <article class="stat"><p class="eyebrow">Open</p><h2 id="stat-open">&mdash;</h2></article>
-        <article class="stat"><p class="eyebrow">P1 open</p><h2 id="stat-p1">&mdash;</h2></article>
-        <article class="stat"><p class="eyebrow">Average score</p><h2 id="stat-avg">&mdash;</h2></article>
-        <article class="stat"><p class="eyebrow">MTTA</p><h2 id="stat-mtta">&mdash;</h2></article>
-        <article class="stat"><p class="eyebrow">MTTR</p><h2 id="stat-mttr">&mdash;</h2></article>
-      </section>
+      <nav class="nav-tabs" role="tablist" aria-label="Dashboard views">
+        <button type="button" class="tab-btn active" data-tab="tab-incidents" role="tab" aria-selected="true">Incident Console</button>
+        <button type="button" class="tab-btn" data-tab="tab-scoring" role="tab" aria-selected="false">Score Simulator (/v1/score)</button>
+        <button type="button" class="tab-btn" data-tab="tab-playbooks" role="tab" aria-selected="false">Playbooks Library (/v1/playbooks)</button>
+        <button type="button" class="tab-btn" data-tab="tab-ingest" role="tab" aria-selected="false">Alert Ingest (/v1/ingest)</button>
+        <a href="/docs" target="_blank" rel="noopener" class="tab-btn tab-link">Interactive API Docs (/docs) &nearr;</a>
+        <a href="/openapi.json" target="_blank" rel="noopener" class="tab-btn tab-link">OpenAPI JSON &nearr;</a>
+        <a href="/metrics" target="_blank" rel="noopener" class="tab-btn tab-link">Metrics &nearr;</a>
+      </nav>
 
-      <p class="status" id="status" role="status" aria-live="polite">Loading incidents&hellip;</p>
-
-      <section class="workspace">
-        <section class="panel queue" aria-labelledby="queue-title">
-          <div class="panel-head">
-            <h2 id="queue-title">Incident queue</h2>
-            <span class="count" id="result-count"></span>
-          </div>
-          <form class="filters" id="filter-form" role="search" aria-label="Filter incidents">
-            <label class="grow">
-              <span class="sr-only">Search incidents</span>
-              <input name="search" type="search" placeholder="Search service, owner, description" />
-            </label>
-            <label>
-              <span class="sr-only">Priority</span>
-              <select name="priority">
-                <option value="">All priorities</option>
-                <option>P1</option>
-                <option>P2</option>
-                <option>P3</option>
-                <option>P4</option>
-              </select>
-            </label>
-            <label>
-              <span class="sr-only">State</span>
-              <select name="state">
-                <option value="">All states</option>
-                <option>open</option>
-                <option>acknowledged</option>
-                <option>mitigated</option>
-                <option>resolved</option>
-              </select>
-            </label>
-            <label>
-              <span class="sr-only">Category</span>
-              <select name="category">
-                <option value="">All categories</option>
-                <option>availability</option>
-                <option>security</option>
-                <option>data</option>
-                <option>latency</option>
-              </select>
-            </label>
-            <label>
-              <span class="sr-only">Owner</span>
-              <input name="owner" placeholder="Owner" />
-            </label>
-            <label>
-              <span class="sr-only">Environment</span>
-              <input name="environment" placeholder="Environment" />
-            </label>
-            <label>
-              <span class="sr-only">Sort order</span>
-              <select name="sort">
-                <option value="created_at:desc">Newest</option>
-                <option value="created_at:asc">Oldest</option>
-                <option value="score:desc">Highest score</option>
-                <option value="score:asc">Lowest score</option>
-                <option value="updated_at:desc">Recently updated</option>
-              </select>
-            </label>
-            <button type="button" class="ghost" id="clear-filters">Clear</button>
-          </form>
-          <div id="incident-list" class="list" aria-live="polite"></div>
-          <div class="pager">
-            <button type="button" class="ghost" id="prev-page" disabled>Previous</button>
-            <span id="page-state" class="hint">Page 1</span>
-            <button type="button" class="ghost" id="next-page" disabled>Next</button>
-          </div>
+      <!-- TAB 1: Incident Console -->
+      <div id="tab-incidents" class="tab-content active" role="tabpanel">
+        <section class="summary-grid" id="summary-grid" aria-label="Incident summary">
+          <article class="stat"><p class="eyebrow">Total</p><h2 id="stat-total">&mdash;</h2></article>
+          <article class="stat"><p class="eyebrow">Open</p><h2 id="stat-open">&mdash;</h2></article>
+          <article class="stat"><p class="eyebrow">P1 open</p><h2 id="stat-p1">&mdash;</h2></article>
+          <article class="stat"><p class="eyebrow">Average score</p><h2 id="stat-avg">&mdash;</h2></article>
+          <article class="stat"><p class="eyebrow">MTTA</p><h2 id="stat-mtta">&mdash;</h2></article>
+          <article class="stat"><p class="eyebrow">MTTR</p><h2 id="stat-mttr">&mdash;</h2></article>
         </section>
 
-        <aside class="panel detail" id="detail-panel" hidden aria-labelledby="detail-title">
-          <div class="panel-head">
-            <h2 id="detail-title">Incident detail</h2>
-            <button type="button" class="ghost" id="close-detail" aria-label="Close incident detail">Close</button>
-          </div>
-          <div id="detail-body"></div>
-        </aside>
+        <p class="status" id="status" role="status" aria-live="polite">Loading incidents&hellip;</p>
 
-        <section class="panel compose" aria-labelledby="compose-title">
-          <h2 id="compose-title">Create incident</h2>
-          <form id="incident-form" class="stack">
-            <label>Service <input name="service" placeholder="payments-api" required maxlength="120" /></label>
-            <label>Owner team <input name="owner" placeholder="payments" required maxlength="120" /></label>
-            <label>Environment <input name="environment" value="production" required maxlength="60" /></label>
-            <div class="two-up">
-              <label>Criticality
-                <select name="criticality">
-                  <option>low</option>
-                  <option selected>medium</option>
-                  <option>high</option>
-                  <option>critical</option>
+        <section class="workspace">
+          <section class="panel queue" aria-labelledby="queue-title">
+            <div class="panel-head">
+              <h2 id="queue-title">Incident queue</h2>
+              <span class="count" id="result-count"></span>
+            </div>
+            <form class="filters" id="filter-form" role="search" aria-label="Filter incidents">
+              <label class="grow">
+                <span class="sr-only">Search incidents</span>
+                <input name="search" type="search" placeholder="Search service, owner, description" />
+              </label>
+              <label>
+                <span class="sr-only">Priority</span>
+                <select name="priority">
+                  <option value="">All priorities</option>
+                  <option>P1</option>
+                  <option>P2</option>
+                  <option>P3</option>
+                  <option>P4</option>
                 </select>
               </label>
-              <label>Category
+              <label>
+                <span class="sr-only">State</span>
+                <select name="state">
+                  <option value="">All states</option>
+                  <option>open</option>
+                  <option>acknowledged</option>
+                  <option>mitigated</option>
+                  <option>resolved</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Category</span>
                 <select name="category">
+                  <option value="">All categories</option>
                   <option>availability</option>
                   <option>security</option>
                   <option>data</option>
                   <option>latency</option>
                 </select>
               </label>
+              <label>
+                <span class="sr-only">Owner</span>
+                <input name="owner" placeholder="Owner" />
+              </label>
+              <label>
+                <span class="sr-only">Environment</span>
+                <input name="environment" placeholder="Environment" />
+              </label>
+              <label>
+                <span class="sr-only">Sort order</span>
+                <select name="sort">
+                  <option value="created_at:desc">Newest</option>
+                  <option value="created_at:asc">Oldest</option>
+                  <option value="score:desc">Highest score</option>
+                  <option value="score:asc">Lowest score</option>
+                  <option value="updated_at:desc">Recently updated</option>
+                </select>
+              </label>
+              <button type="button" class="ghost" id="clear-filters">Clear</button>
+            </form>
+            <div id="incident-list" class="list" aria-live="polite"></div>
+            <div class="pager">
+              <button type="button" class="ghost" id="prev-page" disabled>Previous</button>
+              <span id="page-state" class="hint">Page 1</span>
+              <button type="button" class="ghost" id="next-page" disabled>Next</button>
             </div>
-            <div class="two-up">
-              <label>Impacted users <input name="impacted_users" type="number" min="0" step="1" placeholder="0" required /></label>
-              <label>Error rate % <input name="error_rate" type="number" min="0" max="100" step="0.1" placeholder="0" required /></label>
+          </section>
+
+          <aside class="panel detail" id="detail-panel" hidden aria-labelledby="detail-title">
+            <div class="panel-head">
+              <h2 id="detail-title">Incident detail</h2>
+              <button type="button" class="ghost" id="close-detail" aria-label="Close incident detail">Close</button>
             </div>
-            <div class="two-up">
-              <label>Latency (ms) <input name="latency_ms" type="number" min="0" step="1" placeholder="0" required /></label>
-              <label>Alerts <input name="alerts" type="number" min="0" step="1" placeholder="0" required /></label>
-            </div>
-            <label>Priority hint
-              <select name="priority_hint">
-                <option value="">No hint (score decides)</option>
-                <option>P1</option>
-                <option>P2</option>
-                <option>P3</option>
-                <option>P4</option>
-              </select>
-            </label>
-            <label>Description <textarea name="description" rows="3" maxlength="2000" placeholder="What changed, who is affected"></textarea></label>
-            <button type="submit">Store incident</button>
-            <p class="hint">Scoring is deterministic. The response is a weighted 0&ndash;100 score with a P1&ndash;P4 band and per-dimension factors.</p>
-          </form>
+            <div id="detail-body"></div>
+          </aside>
+
+          <section class="panel compose" aria-labelledby="compose-title">
+            <h2 id="compose-title">Create incident</h2>
+            <form id="incident-form" class="stack">
+              <label>Service <input name="service" placeholder="payments-api" required maxlength="120" /></label>
+              <label>Owner team <input name="owner" placeholder="payments" required maxlength="120" /></label>
+              <label>Environment <input name="environment" value="production" required maxlength="60" /></label>
+              <div class="two-up">
+                <label>Criticality
+                  <select name="criticality">
+                    <option>low</option>
+                    <option selected>medium</option>
+                    <option>high</option>
+                    <option>critical</option>
+                  </select>
+                </label>
+                <label>Category
+                  <select name="category">
+                    <option>availability</option>
+                    <option>security</option>
+                    <option>data</option>
+                    <option>latency</option>
+                  </select>
+                </label>
+              </div>
+              <div class="two-up">
+                <label>Impacted users <input name="impacted_users" type="number" min="0" step="1" placeholder="0" required /></label>
+                <label>Error rate % <input name="error_rate" type="number" min="0" max="100" step="0.1" placeholder="0" required /></label>
+              </div>
+              <div class="two-up">
+                <label>Latency (ms) <input name="latency_ms" type="number" min="0" step="1" placeholder="0" required /></label>
+                <label>Alerts <input name="alerts" type="number" min="0" step="1" placeholder="0" required /></label>
+              </div>
+              <label>Priority hint
+                <select name="priority_hint">
+                  <option value="">No hint (score decides)</option>
+                  <option>P1</option>
+                  <option>P2</option>
+                  <option>P3</option>
+                  <option>P4</option>
+                </select>
+              </label>
+              <label>Description <textarea name="description" rows="3" maxlength="2000" placeholder="What changed, who is affected"></textarea></label>
+              <button type="submit">Store incident</button>
+              <p class="hint">Scoring is deterministic. The response is a weighted 0&ndash;100 score with a P1&ndash;P4 band and per-dimension factors.</p>
+            </form>
+          </section>
         </section>
-      </section>
+      </div>
+
+      <!-- TAB 2: Scoring Simulator (/v1/score) -->
+      <div id="tab-scoring" class="tab-content" role="tabpanel">
+        <div class="section-head">
+          <div>
+            <h2>Deterministic Scoring Simulator</h2>
+            <p class="lede">Test and evaluate risk scores with the <code>/v1/score</code> endpoint without modifying stored incidents.</p>
+          </div>
+        </div>
+        <div class="score-layout">
+          <div class="panel">
+            <h3 style="margin-bottom: 16px;">Simulation Inputs</h3>
+            <form id="score-simulator-form" class="stack">
+              <label>Service <input id="sim-service" name="service" value="checkout-gateway" required /></label>
+              <div class="two-up">
+                <label>Criticality
+                  <select id="sim-criticality" name="criticality">
+                    <option>low</option>
+                    <option>medium</option>
+                    <option selected>high</option>
+                    <option>critical</option>
+                  </select>
+                </label>
+                <label>Category
+                  <select id="sim-category" name="category">
+                    <option selected>availability</option>
+                    <option>security</option>
+                    <option>data</option>
+                    <option>latency</option>
+                  </select>
+                </label>
+              </div>
+              <div class="two-up">
+                <label>Impacted users <input id="sim-users" name="impacted_users" type="number" min="0" value="1200" required /></label>
+                <label>Error rate % <input id="sim-error-rate" name="error_rate" type="number" min="0" max="100" step="0.1" value="8.5" required /></label>
+              </div>
+              <div class="two-up">
+                <label>Latency (ms) <input id="sim-latency" name="latency_ms" type="number" min="0" value="450" required /></label>
+                <label>Alert count <input id="sim-alerts" name="alerts" type="number" min="0" value="5" required /></label>
+              </div>
+              <label>Priority hint
+                <select id="sim-hint" name="priority_hint">
+                  <option value="">No hint (automatic)</option>
+                  <option>P1</option>
+                  <option>P2</option>
+                  <option>P3</option>
+                  <option>P4</option>
+                </select>
+              </label>
+              <button type="submit" id="sim-submit-btn">Evaluate Score (POST /v1/score)</button>
+            </form>
+          </div>
+          <div class="score-result-card" id="sim-result-card">
+            <div class="panel-head">
+              <h3>Live Calculation Output</h3>
+              <span id="sim-priority-badge" class="badge">Awaiting input</span>
+            </div>
+            <div class="score-result-badge">
+              <span class="score-number" id="sim-score-num">&mdash;</span>
+              <span class="hint">/ 100 risk score</span>
+            </div>
+            <p id="sim-explanation" class="lede">Click "Evaluate Score" to run deterministic assessment.</p>
+            <h4>Factor Breakdown</h4>
+            <div id="sim-factors-container">
+              <p class="hint">Factor penalties and weights will render here.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Playbooks Catalog (/v1/playbooks) -->
+      <div id="tab-playbooks" class="tab-content" role="tabpanel">
+        <div class="section-head">
+          <div>
+            <h2>Operational Playbooks & Runbooks</h2>
+            <p class="lede">Configured triage and mitigation playbooks served by <code>/v1/playbooks</code>.</p>
+          </div>
+          <button type="button" class="ghost" id="reload-playbooks-btn">Reload playbooks</button>
+        </div>
+        <div id="playbooks-container" class="playbooks-grid">
+          <p class="hint">Loading playbooks&hellip;</p>
+        </div>
+      </div>
+
+      <!-- TAB 4: Alert Ingest (/v1/ingest) -->
+      <div id="tab-ingest" class="tab-content" role="tabpanel">
+        <div class="section-head">
+          <div>
+            <h2>Webhook Alert Ingest Simulator</h2>
+            <p class="lede">Simulate external monitoring alerts pushed to <code>/v1/ingest/{source}</code>.</p>
+          </div>
+        </div>
+        <div class="score-layout">
+          <div class="panel">
+            <form id="ingest-sim-form" class="stack">
+              <label>Ingest Source
+                <select id="ingest-source" name="source">
+                  <option value="pagerduty">PagerDuty Webhook (/v1/ingest/pagerduty)</option>
+                  <option value="datadog">Datadog Alert (/v1/ingest/datadog)</option>
+                  <option value="generic" selected>Generic JSON Ingest (/v1/ingest/generic)</option>
+                </select>
+              </label>
+              <label>Alert Payload (JSON)
+                <textarea id="ingest-payload" rows="12" style="font-family: monospace; font-size: 0.86rem;"></textarea>
+              </label>
+              <button type="submit" id="ingest-submit-btn">Send Webhook (POST /v1/ingest/{source})</button>
+            </form>
+          </div>
+          <div class="score-result-card">
+            <h3>Ingest Response</h3>
+            <p class="hint" id="ingest-status">Awaiting webhook submission&hellip;</p>
+            <pre class="json-preview" id="ingest-response-preview">{ "status": "idle" }</pre>
+          </div>
+        </div>
+      </div>
     </main>
     <script src="/dashboard/config.js"></script>
     <script src="/dashboard/app.js"></script>

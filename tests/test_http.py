@@ -89,7 +89,14 @@ class CoreRouteTests(HttpServerCase):
         status, _, payload, _ = self.request("GET", "/")
         self.assertEqual(status, 200)
         self.assertIn("/v1/incidents", payload["routes"])
-        self.assertEqual(payload["docs"], "/openapi.json")
+        self.assertEqual(payload["docs"], "/docs")
+        self.assertEqual(payload["openapi"], "/openapi.json")
+
+    def test_docs_page(self):
+        status, headers, _, raw = self.request("GET", "/docs")
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers["content-type"])
+        self.assertIn(b"api-reference", raw)
 
     def test_root_redirects_for_html(self):
         status, headers, _, _ = self.request("GET", "/", headers={"Accept": "text/html,application/xhtml+xml"})

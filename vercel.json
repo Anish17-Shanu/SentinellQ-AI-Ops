@@ -18,6 +18,7 @@
     { "source": "/health", "destination": "/api/v1/health" },
     { "source": "/ready", "destination": "/api/v1/ready" },
     { "source": "/openapi.json", "destination": "/api/openapi.json" },
+    { "source": "/docs", "destination": "/api/docs" },
     { "source": "/v1/:match*", "destination": "/api/v1/:match*" }
   ],
   "crons": [

@@ -145,6 +145,8 @@ class Router:
         add("GET", "/ready", "ready", None)
         add("GET", "/v1/ready", "ready", None)
         add("GET", "/openapi.json", "openapi", None)
+        add("GET", "/docs", "docs", None)
+        add("GET", "/v1/docs", "docs", None)
         add("GET", "/metrics", "metrics_endpoint", "admin")
 
         add_versioned("GET", "/incidents", "list_incidents")
@@ -355,7 +357,8 @@ class Router:
                 "service": "SentinelIQ AI Ops",
                 "version": self.settings.version,
                 "status": "running",
-                "docs": "/openapi.json",
+                "docs": "/docs",
+                "openapi": "/openapi.json",
                 "dashboard": "/dashboard/",
                 "routes": ["/v1/incidents", "/v1/summary", "/v1/score", "/v1/ingest/{source}", "/v1/playbooks"],
             }
@@ -376,6 +379,37 @@ class Router:
 
     def openapi(self, request, identity, match) -> Response:
         return json_response(build_openapi(self.settings))
+
+    def docs(self, request, identity, match) -> Response:
+        html = """<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SentinelIQ AI Ops — API Reference</title>
+    <link rel="icon" href="/dashboard/favicon.svg" type="image/svg+xml" />
+    <style>
+      body { margin: 0; background: #07111b; }
+    </style>
+  </head>
+  <body>
+    <script
+      id="api-reference"
+      data-url="/openapi.json"
+      data-configuration='{"theme": "deepSpace", "layout": "modern", "showSidebar": true}'
+      src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>"""
+        response = Response(status=200, content_type="text/html; charset=utf-8", body=html.encode("utf-8"))
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com https://fonts.gstatic.com 'unsafe-inline' 'unsafe-eval' data:; "
+            "connect-src 'self' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
+            "img-src 'self' data: https:;"
+        )
+        return response
 
     def playbooks(self, request, identity, match) -> Response:
         return json_response(self.service.playbooks)
