@@ -91,6 +91,16 @@ class CoreRouteTests(HttpServerCase):
         self.assertIn("/v1/incidents", payload["routes"])
         self.assertEqual(payload["docs"], "/openapi.json")
 
+    def test_root_redirects_for_html(self):
+        status, headers, _, _ = self.request("GET", "/", headers={"Accept": "text/html,application/xhtml+xml"})
+        self.assertEqual(status, 302)
+        self.assertEqual(headers["location"], "/dashboard/")
+
+    def test_api_health_endpoint(self):
+        status, _, payload, _ = self.request("GET", "/api/health")
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["status"], "ok")
+
     def test_incident_crud_flow(self):
         record = self.create_incident()
         incident_id = record["id"]

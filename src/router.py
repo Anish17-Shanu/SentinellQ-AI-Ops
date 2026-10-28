@@ -176,7 +176,7 @@ class Router:
         started = time.perf_counter()
         request.request_id = sanitize_request_id(request.request_id or request.header("x-request-id"))
         path = unquote(request.path)
-        if path.startswith("/api/") and path not in {"/api/health"}:
+        if path.startswith("/api/"):
             stripped = path[4:]
             if self._match(request.method, stripped)[0]:
                 path = stripped
@@ -345,6 +345,11 @@ class Router:
 
     # -- handlers ------------------------------------------------------
     def root(self, request, identity, match) -> Response:
+        accept = request.header("accept")
+        if "text/html" in accept:
+            response = Response(status=302, content_type="text/html; charset=utf-8", body=b"")
+            response.headers["Location"] = "/dashboard/"
+            return response
         return json_response(
             {
                 "service": "SentinelIQ AI Ops",
