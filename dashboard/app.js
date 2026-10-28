@@ -567,26 +567,32 @@ async function loadPlaybooks() {
   const container = document.getElementById('playbooks-container');
   if (!container) return;
   try {
-    container.innerHTML = '<p class="hint">Fetching playbooks from /v1/playbooks&hellip;</p>';
+    container.replaceChildren(el('p', { class: 'hint', text: 'Fetching playbooks from /v1/playbooks…' }));
     const playbooks = await request('/v1/playbooks');
     container.replaceChildren();
-    const entries = Object.entries(playbooks);
-    if (!entries.length) {
-      container.innerHTML = '<p class="hint">No playbooks found.</p>';
+    const defaults = Object.entries(playbooks.defaults || {});
+    const overrides = Object.entries(playbooks.service_overrides || {});
+    if (!defaults.length && !overrides.length) {
+      container.replaceChildren(el('p', { class: 'hint', text: 'No playbooks found.' }));
       return;
     }
-    for (const [key, steps] of entries) {
-      const card = el('article', { class: 'playbook-card' },
-        el('h3', {},
-          el('span', { text: key }),
-          el('span', { class: 'badge', text: steps.length + ' step(s)' })
-        ),
-        el('ol', {}, steps.map((s) => el('li', { text: s })))
-      );
-      container.appendChild(card);
+    const card = (title, steps) => el('article', { class: 'playbook-card' },
+      el('h3', {},
+        el('span', { text: title }),
+        el('span', { class: 'badge', text: steps.length + ' step(s)' })
+      ),
+      el('ol', {}, steps.map((s) => el('li', { text: s })))
+    );
+    for (const [category, steps] of defaults) {
+      container.appendChild(card(category, steps));
+    }
+    for (const [service, categories] of overrides) {
+      for (const [category, steps] of Object.entries(categories || {})) {
+        container.appendChild(card(service + ' · ' + category, steps));
+      }
     }
   } catch (err) {
-    container.innerHTML = '<p class="hint" style="color:var(--danger)">Failed to load playbooks: ' + err.message + '</p>';
+    container.replaceChildren(el('p', { class: 'hint hint-error', text: 'Failed to load playbooks: ' + err.message }));
   }
 }
 const reloadPlaybooksBtn = document.getElementById('reload-playbooks-btn');

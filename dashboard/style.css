@@ -200,6 +200,7 @@ a { color: var(--accent); }
   margin-bottom: 10px;
 }
 .count, .hint { color: var(--muted); font-size: 0.8rem; }
+.hint-error { color: var(--danger); }
 
 .filters {
   display: flex;
