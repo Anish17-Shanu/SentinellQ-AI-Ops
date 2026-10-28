@@ -13,6 +13,12 @@ All notable changes to SentinelIQ are documented here. The format follows
   writes and admin routes return `403`. Defaults preserve existing behavior: `admin`
   without keys, `disabled` with keys.
 
+### Changed
+
+- The runtime image no longer ships `pip`. The server is stdlib-only, and pip's vendored
+  `msgpack`, `setuptools`, and `urllib3` copies were the only `HIGH` findings in the
+  Trivy release scan.
+
 ## [2.0.0] — 2026-10-29
 
 First production-grade release. Implements the roadmap through Phase 4 (security, operability

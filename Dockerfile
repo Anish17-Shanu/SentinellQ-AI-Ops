@@ -3,7 +3,6 @@ FROM python:3.13-slim@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
     HOST=0.0.0.0 \
     PORT=8081 \
     SENTINELIQ_ENV=production \
@@ -12,6 +11,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     SENTINELIQ_LOG_FORMAT=json
 
 WORKDIR /app
+
+# The runtime is stdlib-only; pip's vendored msgpack, setuptools, and urllib3 are
+# never imported and are the image's only HIGH findings in the Trivy release gate.
+RUN SITE_PACKAGES="$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')" \
+    && rm -rf "$SITE_PACKAGES"/pip "$SITE_PACKAGES"/pip-*.dist-info
 
 RUN groupadd --system --gid 10001 sentineliq \
     && useradd --system --uid 10001 --gid sentineliq --no-create-home --shell /usr/sbin/nologin sentineliq \
