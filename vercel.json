@@ -5,9 +5,21 @@
   "functions": {
     "api/[...path].py": {
       "maxDuration": 30,
-      "memory": 512
+      "memory": 512,
+      "includeFiles": "{config/**,data/**,src/**}"
+    },
+    "src/asgi.py": {
+      "maxDuration": 30,
+      "memory": 512,
+      "includeFiles": "{config/**,data/**,src/**}"
     }
   },
+  "rewrites": [
+    { "source": "/health", "destination": "/api/v1/health" },
+    { "source": "/ready", "destination": "/api/v1/ready" },
+    { "source": "/openapi.json", "destination": "/api/openapi.json" },
+    { "source": "/v1/:match*", "destination": "/api/v1/:match*" }
+  ],
   "crons": [
     {
       "path": "/api/v1/cron/tick",

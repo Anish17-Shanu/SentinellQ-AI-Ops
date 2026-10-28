@@ -4,12 +4,21 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 import threading
+from pathlib import Path
 from urllib.parse import parse_qs
 
-from bootstrap import build_context
-from router import SECURITY_HEADERS, Request, Response, json_response
-from util import sanitize_request_id
+_SRC = str(Path(__file__).resolve().parent)
+if _SRC not in sys.path:
+    sys.path.insert(0, _SRC)
+_ROOT = str(Path(__file__).resolve().parents[1])
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from bootstrap import build_context  # noqa: E402
+from router import SECURITY_HEADERS, Request, Response, json_response  # noqa: E402
+from util import sanitize_request_id  # noqa: E402
 
 logger = logging.getLogger("sentineliq.asgi")
 

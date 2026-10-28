@@ -84,7 +84,7 @@ def file_lock(path: Path, timeout: float = 10.0):
             while True:
                 try:
                     handle.seek(0)
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)  # type: ignore[attr-defined]
                     acquired = True
                     break
                 except OSError:
@@ -111,7 +111,7 @@ def file_lock(path: Path, timeout: float = 10.0):
                     import msvcrt
 
                     handle.seek(0)
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)  # type: ignore[attr-defined]
                 else:
                     import fcntl
 
