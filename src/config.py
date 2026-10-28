@@ -10,7 +10,7 @@ from pathlib import Path
 from errors import ConfigError
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "2.0.0"
+VERSION = "0.1.1"
 
 VALID_BACKENDS = {"json", "sqlite", "postgres"}
 VALID_ROLES = {"viewer", "responder", "admin"}

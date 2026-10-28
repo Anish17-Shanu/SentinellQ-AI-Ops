@@ -1,6 +1,6 @@
 [project]
 name = "sentineliq-ai-ops"
-version = "2.0.0"
+version = "0.1.1"
 description = "Explainable, deterministic incident scoring and on-call response API"
 authors = [{ name = "Anish Kumar" }]
 requires-python = ">=3.11"
