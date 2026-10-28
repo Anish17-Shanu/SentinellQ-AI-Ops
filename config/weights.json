@@ -1,0 +1,21 @@
+{
+  "criticality_weights": {
+    "low": 8,
+    "medium": 18,
+    "high": 30,
+    "critical": 42
+  },
+  "max_user_impact": 25,
+  "user_impact_scale": 12,
+  "max_error": 20,
+  "error_rate_multiplier": 1.8,
+  "max_latency": 16,
+  "latency_ceiling_ms": 2000,
+  "max_alerts": 12,
+  "alert_multiplier": 1.1,
+  "bands": {
+    "P1": 85,
+    "P2": 65,
+    "P3": 42
+  }
+}

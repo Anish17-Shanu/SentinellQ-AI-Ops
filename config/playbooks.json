@@ -1,0 +1,33 @@
+{
+  "defaults": {
+    "availability": [
+      "Page the owning service team immediately.",
+      "Shift traffic or activate a fallback if available.",
+      "Start a short incident timeline and customer impact summary."
+    ],
+    "security": [
+      "Isolate suspicious access paths and rotate affected credentials.",
+      "Preserve logs before applying mitigations.",
+      "Escalate to security stakeholders for containment review."
+    ],
+    "data": [
+      "Freeze destructive writes until blast radius is understood.",
+      "Validate backups and start data integrity checks.",
+      "Communicate affected records and restore strategy early."
+    ],
+    "latency": [
+      "Check dependency saturation and recent deploys.",
+      "Throttle expensive workloads or scale the hot path.",
+      "Compare p95 latency against the last healthy window."
+    ]
+  },
+  "service_overrides": {
+    "payments-api": {
+      "availability": [
+        "Declare a payments incident and page the payments on-call.",
+        "Switch to the read-only checkout fallback.",
+        "Reconcile in-flight payment intents before retries resume."
+      ]
+    }
+  }
+}

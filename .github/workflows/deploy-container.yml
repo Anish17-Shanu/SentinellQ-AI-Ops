@@ -1,0 +1,71 @@
+name: Deploy container
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag published by the Release workflow"
+        required: true
+        default: latest
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-container
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: production container
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      DEPLOY_BASE_URL: ${{ secrets.DEPLOY_BASE_URL }}
+      DEPLOY_ADMIN_KEY: ${{ secrets.DEPLOY_ADMIN_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      IMAGE: ghcr.io/${{ github.repository }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preflight
+        id: preflight
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_BASE_URL DEPLOY_ADMIN_KEY; do
+            value="${!name}"
+            [ -n "$value" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping container deploy; missing secrets:$missing DEPLOY_SSH_KEY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Prepare SSH
+        if: steps.preflight.outputs.skip == 'false'
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            echo "::warning::DEPLOY_KNOWN_HOSTS is not set; trusting the host key on first connection"
+          fi
+      - name: Roll out image
+        if: steps.preflight.outputs.skip == 'false'
+        run: |
+          image="$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]'):$TAG"
+          strict="yes"
+          [ -n "$DEPLOY_KNOWN_HOSTS" ] || strict="accept-new"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking="$strict" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "docker pull '$image' && docker tag '$image' sentineliq-ai-ops:local && cd '$DEPLOY_PATH' && docker compose up -d --no-build && docker compose ps"
+      - name: Smoke test
+        if: steps.preflight.outputs.skip == 'false'
+        run: python scripts/smoke_test.py --base-url "$DEPLOY_BASE_URL" --api-key "$DEPLOY_ADMIN_KEY"

@@ -4,51 +4,172 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="Anish Kumar" />
+    <meta name="description" content="SentinelIQ AI Ops — explainable incident scoring and response console." />
     <title>SentinelIQ AI Ops</title>
+    <link rel="icon" href="/dashboard/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/dashboard/style.css" />
   </head>
   <body>
+    <a class="skip-link" href="#incident-list">Skip to incident queue</a>
     <main class="shell">
-      <section class="hero">
-        <p class="eyebrow">AI Ops Console &bull; Created by Anish Kumar</p>
-        <h1>SentinelIQ</h1>
-        <p class="lede">Explainable incident scoring with local persistence, team ownership context, and response playbooks.</p>
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">AI Ops Console &bull; Created by Anish Kumar</p>
+          <h1>SentinelIQ</h1>
+          <p class="lede">Explainable incident scoring with lifecycle tracking, team ownership, and response playbooks.</p>
+        </div>
+        <div class="hero-actions">
+          <p class="conn" id="conn-state" role="status">Connecting&hellip;</p>
+          <button type="button" class="ghost" id="refresh-button">Refresh</button>
+          <details class="settings">
+            <summary>Connection settings</summary>
+            <div class="settings-body">
+              <label for="api-key">API key <span class="hint">(optional; stored in this tab only)</span></label>
+              <input id="api-key" type="password" autocomplete="off" placeholder="viewer/responder/admin key" />
+              <button type="button" id="save-key">Save key</button>
+              <p class="hint" id="key-state">No key set. Read-only demo access.</p>
+            </div>
+          </details>
+        </div>
+      </header>
+
+      <section class="summary-grid" id="summary-grid" aria-label="Incident summary">
+        <article class="stat"><p class="eyebrow">Total</p><h2 id="stat-total">&mdash;</h2></article>
+        <article class="stat"><p class="eyebrow">Open</p><h2 id="stat-open">&mdash;</h2></article>
+        <article class="stat"><p class="eyebrow">P1 open</p><h2 id="stat-p1">&mdash;</h2></article>
+        <article class="stat"><p class="eyebrow">Average score</p><h2 id="stat-avg">&mdash;</h2></article>
+        <article class="stat"><p class="eyebrow">MTTA</p><h2 id="stat-mtta">&mdash;</h2></article>
+        <article class="stat"><p class="eyebrow">MTTR</p><h2 id="stat-mttr">&mdash;</h2></article>
       </section>
-      <section class="summary-grid" id="summary-grid"></section>
-      <section class="layout">
-        <section class="panel">
-          <h2>Create Incident</h2>
-          <form id="incident-form" class="stack">
-            <input name="service" placeholder="Service name" required />
-            <input name="owner" placeholder="Owner team" required />
-            <input name="environment" placeholder="Environment" value="production" required />
-            <select name="criticality">
-              <option>low</option>
-              <option selected>medium</option>
-              <option>high</option>
-              <option>critical</option>
-            </select>
-            <select name="category">
-              <option>availability</option>
-              <option>security</option>
-              <option>data</option>
-              <option>latency</option>
-            </select>
-            <input name="impacted_users" type="number" placeholder="Impacted users" required />
-            <input name="error_rate" type="number" step="0.1" placeholder="Error rate" required />
-            <input name="latency_ms" type="number" step="0.1" placeholder="Latency ms" required />
-            <input name="alerts" type="number" placeholder="Alert count" required />
-            <textarea name="description" placeholder="Incident description"></textarea>
-            <button type="submit">Store Incident</button>
+
+      <p class="status" id="status" role="status" aria-live="polite">Loading incidents&hellip;</p>
+
+      <section class="workspace">
+        <section class="panel queue" aria-labelledby="queue-title">
+          <div class="panel-head">
+            <h2 id="queue-title">Incident queue</h2>
+            <span class="count" id="result-count"></span>
+          </div>
+          <form class="filters" id="filter-form" role="search" aria-label="Filter incidents">
+            <label class="grow">
+              <span class="sr-only">Search incidents</span>
+              <input name="search" type="search" placeholder="Search service, owner, description" />
+            </label>
+            <label>
+              <span class="sr-only">Priority</span>
+              <select name="priority">
+                <option value="">All priorities</option>
+                <option>P1</option>
+                <option>P2</option>
+                <option>P3</option>
+                <option>P4</option>
+              </select>
+            </label>
+            <label>
+              <span class="sr-only">State</span>
+              <select name="state">
+                <option value="">All states</option>
+                <option>open</option>
+                <option>acknowledged</option>
+                <option>mitigated</option>
+                <option>resolved</option>
+              </select>
+            </label>
+            <label>
+              <span class="sr-only">Category</span>
+              <select name="category">
+                <option value="">All categories</option>
+                <option>availability</option>
+                <option>security</option>
+                <option>data</option>
+                <option>latency</option>
+              </select>
+            </label>
+            <label>
+              <span class="sr-only">Owner</span>
+              <input name="owner" placeholder="Owner" />
+            </label>
+            <label>
+              <span class="sr-only">Environment</span>
+              <input name="environment" placeholder="Environment" />
+            </label>
+            <label>
+              <span class="sr-only">Sort order</span>
+              <select name="sort">
+                <option value="created_at:desc">Newest</option>
+                <option value="created_at:asc">Oldest</option>
+                <option value="score:desc">Highest score</option>
+                <option value="score:asc">Lowest score</option>
+                <option value="updated_at:desc">Recently updated</option>
+              </select>
+            </label>
+            <button type="button" class="ghost" id="clear-filters">Clear</button>
           </form>
-          <p class="status" id="status">Ready.</p>
+          <div id="incident-list" class="list" aria-live="polite"></div>
+          <div class="pager">
+            <button type="button" class="ghost" id="prev-page" disabled>Previous</button>
+            <span id="page-state" class="hint">Page 1</span>
+            <button type="button" class="ghost" id="next-page" disabled>Next</button>
+          </div>
         </section>
-        <section class="panel">
-          <h2>Incident Queue</h2>
-          <div id="incident-list" class="list"></div>
+
+        <aside class="panel detail" id="detail-panel" hidden aria-labelledby="detail-title">
+          <div class="panel-head">
+            <h2 id="detail-title">Incident detail</h2>
+            <button type="button" class="ghost" id="close-detail" aria-label="Close incident detail">Close</button>
+          </div>
+          <div id="detail-body"></div>
+        </aside>
+
+        <section class="panel compose" aria-labelledby="compose-title">
+          <h2 id="compose-title">Create incident</h2>
+          <form id="incident-form" class="stack">
+            <label>Service <input name="service" placeholder="payments-api" required maxlength="120" /></label>
+            <label>Owner team <input name="owner" placeholder="payments" required maxlength="120" /></label>
+            <label>Environment <input name="environment" value="production" required maxlength="60" /></label>
+            <div class="two-up">
+              <label>Criticality
+                <select name="criticality">
+                  <option>low</option>
+                  <option selected>medium</option>
+                  <option>high</option>
+                  <option>critical</option>
+                </select>
+              </label>
+              <label>Category
+                <select name="category">
+                  <option>availability</option>
+                  <option>security</option>
+                  <option>data</option>
+                  <option>latency</option>
+                </select>
+              </label>
+            </div>
+            <div class="two-up">
+              <label>Impacted users <input name="impacted_users" type="number" min="0" step="1" placeholder="0" required /></label>
+              <label>Error rate % <input name="error_rate" type="number" min="0" max="100" step="0.1" placeholder="0" required /></label>
+            </div>
+            <div class="two-up">
+              <label>Latency (ms) <input name="latency_ms" type="number" min="0" step="1" placeholder="0" required /></label>
+              <label>Alerts <input name="alerts" type="number" min="0" step="1" placeholder="0" required /></label>
+            </div>
+            <label>Priority hint
+              <select name="priority_hint">
+                <option value="">No hint (score decides)</option>
+                <option>P1</option>
+                <option>P2</option>
+                <option>P3</option>
+                <option>P4</option>
+              </select>
+            </label>
+            <label>Description <textarea name="description" rows="3" maxlength="2000" placeholder="What changed, who is affected"></textarea></label>
+            <button type="submit">Store incident</button>
+            <p class="hint">Scoring is deterministic. The response is a weighted 0&ndash;100 score with a P1&ndash;P4 band and per-dimension factors.</p>
+          </form>
         </section>
       </section>
     </main>
+    <script src="/dashboard/config.js"></script>
     <script src="/dashboard/app.js"></script>
   </body>
 </html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "python scripts/prepare_vercel.py",
+  "outputDirectory": "public",
+  "functions": {
+    "api/[...path].py": {
+      "maxDuration": 30,
+      "memory": 512
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/v1/cron/tick",
+      "schedule": "15 6 * * *"
+    }
+  ]
+}

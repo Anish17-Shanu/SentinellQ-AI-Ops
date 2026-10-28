@@ -1,0 +1,53 @@
+name: Deploy demo (Vercel)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vercel
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: production demo
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      SENTINELIQ_BASE_URL: ${{ secrets.SENTINELIQ_BASE_URL }}
+      SENTINELIQ_ADMIN_KEY: ${{ secrets.SENTINELIQ_ADMIN_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preflight
+        id: preflight
+        run: |
+          missing=""
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID SENTINELIQ_BASE_URL SENTINELIQ_ADMIN_KEY; do
+            value="${!name}"
+            [ -n "$value" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping demo deploy; missing secrets:$missing"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install Vercel CLI
+        if: steps.preflight.outputs.skip == 'false'
+        run: npm install --global vercel@latest
+      - name: Link project
+        if: steps.preflight.outputs.skip == 'false'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build
+        if: steps.preflight.outputs.skip == 'false'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy
+        if: steps.preflight.outputs.skip == 'false'
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Smoke test
+        if: steps.preflight.outputs.skip == 'false'
+        run: python scripts/smoke_test.py --base-url "$SENTINELIQ_BASE_URL" --api-key "$SENTINELIQ_ADMIN_KEY"

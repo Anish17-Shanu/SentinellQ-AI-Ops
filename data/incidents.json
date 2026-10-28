@@ -1,29 +1,177 @@
-[
-  {
-    "service": "payments-api",
-    "criticality": "critical",
-    "impacted_users": 18500,
-    "error_rate": 17.2,
-    "latency_ms": 1850,
-    "alerts": 23,
-    "category": "availability"
-  },
-  {
-    "service": "identity-gateway",
-    "criticality": "high",
-    "impacted_users": 6200,
-    "error_rate": 8.4,
-    "latency_ms": 980,
-    "alerts": 11,
-    "category": "security"
-  },
-  {
-    "service": "analytics-worker",
-    "criticality": "medium",
-    "impacted_users": 900,
-    "error_rate": 2.1,
-    "latency_ms": 2400,
-    "alerts": 6,
-    "category": "latency"
-  }
-]
+{
+  "version": 2,
+  "incidents": [
+    {
+      "id": "seed-de0fe2be-6de8-5e8c-b93c-65b94b82783c",
+      "tenant": "default",
+      "service": "payments-api",
+      "owner": "platform-core",
+      "environment": "production",
+      "description": "",
+      "criticality": "critical",
+      "category": "availability",
+      "impacted_users": 18500,
+      "error_rate": 17.2,
+      "latency_ms": 1850.0,
+      "alerts": 23,
+      "priority_hint": "",
+      "state": "open",
+      "created_at": "2026-10-28T21:29:27Z",
+      "updated_at": "2026-10-28T21:29:27Z",
+      "acknowledged_at": null,
+      "mitigated_at": null,
+      "resolved_at": null,
+      "last_seen_at": "2026-10-28T21:29:27Z",
+      "alert_count": 1,
+      "dedup_key": "payments-api|availability",
+      "source": "seed",
+      "events": [
+        {
+          "type": "imported",
+          "at": "2026-10-28T21:29:27Z",
+          "actor": "system",
+          "detail": {}
+        }
+      ],
+      "priority": "P1",
+      "score": 113.8,
+      "score_100": 99.0,
+      "confidence": 0.92,
+      "risk_band": "severe",
+      "explanation": "payments-api was classified as P1 because of critical service classification, large customer impact, elevated failure rate, severe latency regression, sustained alert pressure.",
+      "factors": [
+        "critical service classification",
+        "large customer impact",
+        "elevated failure rate",
+        "severe latency regression",
+        "sustained alert pressure"
+      ],
+      "dimensions": {
+        "criticality": 42.0,
+        "user_impact": 25.0,
+        "error_rate": 20.0,
+        "latency": 14.8,
+        "alert_pressure": 12.0
+      },
+      "actions": [
+        "Declare a payments incident and page the payments on-call.",
+        "Switch to the read-only checkout fallback.",
+        "Reconcile in-flight payment intents before retries resume."
+      ]
+    },
+    {
+      "id": "seed-3fb582cc-c1d8-5bd6-932c-1a55fce423ff",
+      "tenant": "default",
+      "service": "identity-gateway",
+      "owner": "platform-core",
+      "environment": "production",
+      "description": "",
+      "criticality": "high",
+      "category": "security",
+      "impacted_users": 6200,
+      "error_rate": 8.4,
+      "latency_ms": 980.0,
+      "alerts": 11,
+      "priority_hint": "",
+      "state": "open",
+      "created_at": "2026-10-28T21:29:27Z",
+      "updated_at": "2026-10-28T21:29:27Z",
+      "acknowledged_at": null,
+      "mitigated_at": null,
+      "resolved_at": null,
+      "last_seen_at": "2026-10-28T21:29:27Z",
+      "alert_count": 1,
+      "dedup_key": "identity-gateway|security",
+      "source": "seed",
+      "events": [
+        {
+          "type": "imported",
+          "at": "2026-10-28T21:29:27Z",
+          "actor": "system",
+          "detail": {}
+        }
+      ],
+      "priority": "P1",
+      "score": 89.96,
+      "score_100": 78.2,
+      "confidence": 0.89,
+      "risk_band": "severe",
+      "explanation": "identity-gateway was classified as P1 because of critical service classification, large customer impact, elevated failure rate, sustained alert pressure.",
+      "factors": [
+        "critical service classification",
+        "large customer impact",
+        "elevated failure rate",
+        "sustained alert pressure"
+      ],
+      "dimensions": {
+        "criticality": 30.0,
+        "user_impact": 25.0,
+        "error_rate": 15.12,
+        "latency": 7.84,
+        "alert_pressure": 12.0
+      },
+      "actions": [
+        "Isolate suspicious access paths and rotate affected credentials.",
+        "Preserve logs before applying mitigations.",
+        "Escalate to security stakeholders for containment review."
+      ]
+    },
+    {
+      "id": "seed-fbcbe871-6984-5eed-a15f-cc6ae549be92",
+      "tenant": "default",
+      "service": "analytics-worker",
+      "owner": "platform-core",
+      "environment": "production",
+      "description": "",
+      "criticality": "medium",
+      "category": "latency",
+      "impacted_users": 900,
+      "error_rate": 2.1,
+      "latency_ms": 2400.0,
+      "alerts": 6,
+      "priority_hint": "",
+      "state": "open",
+      "created_at": "2026-10-28T21:29:27Z",
+      "updated_at": "2026-10-28T21:29:27Z",
+      "acknowledged_at": null,
+      "mitigated_at": null,
+      "resolved_at": null,
+      "last_seen_at": "2026-10-28T21:29:27Z",
+      "alert_count": 1,
+      "dedup_key": "analytics-worker|latency",
+      "source": "seed",
+      "events": [
+        {
+          "type": "imported",
+          "at": "2026-10-28T21:29:27Z",
+          "actor": "system",
+          "detail": {}
+        }
+      ],
+      "priority": "P2",
+      "score": 69.38,
+      "score_100": 60.3,
+      "confidence": 0.77,
+      "risk_band": "high",
+      "explanation": "analytics-worker was classified as P2 because of large customer impact, severe latency regression.",
+      "factors": [
+        "large customer impact",
+        "severe latency regression"
+      ],
+      "dimensions": {
+        "criticality": 18.0,
+        "user_impact": 25.0,
+        "error_rate": 3.78,
+        "latency": 16.0,
+        "alert_pressure": 6.6
+      },
+      "actions": [
+        "Check dependency saturation and recent deploys.",
+        "Throttle expensive workloads or scale the hot path.",
+        "Compare p95 latency against the last healthy window."
+      ]
+    }
+  ],
+  "outbox": [],
+  "idempotency": {}
+}

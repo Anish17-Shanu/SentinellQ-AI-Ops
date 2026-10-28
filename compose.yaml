@@ -1,0 +1,39 @@
+services:
+  sentineliq:
+    build: .
+    image: sentineliq-ai-ops:local
+    ports:
+      - "8081:8081"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8081"
+      SENTINELIQ_ENV: production
+      SENTINELIQ_STORAGE: sqlite
+      SENTINELIQ_SQLITE_PATH: /data/sentineliq.db
+      # Set SENTINELIQ_API_KEYS before exposing this beyond localhost.
+      SENTINELIQ_AUTH_REQUIRED: "false"
+      SENTINELIQ_LOG_FORMAT: json
+    volumes:
+      - sentineliq-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=2).status == 200 else 1)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  sentineliq-data:

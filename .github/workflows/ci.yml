@@ -5,15 +5,87 @@ on:
     branches: ["main", "master"]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
+    name: tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-      - name: Compile
-        run: python -m py_compile src/engine.py src/repository.py src/server.py
-      - name: Test
-        run: python -m unittest discover -s tests
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install dev tooling
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt
+      - name: Lint
+        run: python -m ruff check src tests api scripts sdk examples
+      - name: Type check
+        run: python -m mypy src sdk
+      - name: Security scan
+        run: |
+          python -m bandit -q -r src -ll
+          python -m pip_audit -r requirements.txt
+      - name: Test with coverage
+        run: |
+          python -m coverage run -m unittest discover -s tests
+          python -m coverage report
+      - name: Serverless cold-start budget
+        run: python scripts/cold_start.py --runs 3 --budget-ms 2000
+      - name: Smoke test the server
+        run: |
+          python src/server.py --port 8099 &
+          SERVER_PID=$!
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8099/health > /dev/null; then break; fi
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:8099/health
+          curl -fsS http://127.0.0.1:8099/api/incidents | head -c 200
+          curl -fsS -o /dev/null -w "%{http_code}" http://127.0.0.1:8099/dashboard
+          kill $SERVER_PID
+        env:
+          SENTINELIQ_ENV: test
+          SENTINELIQ_AUTO_SEED: "false"
+
+  dashboard:
+    name: dashboard assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check dashboard scripts
+        run: |
+          node --check dashboard/app.js
+          node --check dashboard/config.js
+      - name: Verify dashboard has no unsafe HTML sinks
+        run: |
+          if grep -nE "innerHTML|outerHTML|insertAdjacentHTML|document\.write" dashboard/app.js; then
+            echo "Unsafe HTML sink found in dashboard/app.js"; exit 1
+          fi
+
+  docker:
+    name: docker image
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t sentineliq:ci .
+      - name: Smoke test container
+        run: |
+          docker run -d --name sentineliq-ci -p 8099:8081 -e SENTINELIQ_ENV=test sentineliq:ci
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8099/health > /dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:8099/health
+          curl -fsS http://127.0.0.1:8099/api/incidents > /dev/null
+          curl -fsS http://127.0.0.1:8099/dashboard/ > /dev/null
+          docker logs sentineliq-ci
+          docker rm -f sentineliq-ci

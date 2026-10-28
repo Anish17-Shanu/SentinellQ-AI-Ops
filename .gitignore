@@ -1,2 +1,39 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local data and generated artifacts
+.tmp/
+backups/
+public/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.pre-restore-*
+data/incidents.json.lock
+
+# Secrets and local configuration
+.env
+.env.local
+.env.*
+!.env.example
+
+# Interview / explanation material is intentionally kept out of the public repo
+*.docx
+docs/interview/
+interview-notes/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+node_modules/

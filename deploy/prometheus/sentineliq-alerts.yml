@@ -1,0 +1,68 @@
+groups:
+  - name: sentineliq
+    rules:
+      - alert: SentinelIQServiceDown
+        expr: up{job="sentineliq"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SentinelIQ target is down"
+          description: "Prometheus cannot scrape /metrics on {{ $labels.instance }}."
+
+      - alert: SentinelIQHighErrorRatio
+        expr: |
+          sum(rate(sentineliq_http_requests_total{status="5xx"}[5m]))
+            / sum(rate(sentineliq_http_requests_total[5m])) > 0.02
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SentinelIQ 5xx ratio above 2%"
+          description: "Check structured logs for unhandled_error or storage_error."
+
+      - alert: SentinelIQLatencyBudget
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le, route) (rate(sentineliq_http_request_duration_seconds_bucket[5m]))) > 0.25
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SentinelIQ p95 latency above 250 ms ({{ $labels.route }})"
+          description: "Inspect store size, rate limiting, and host load."
+
+      - alert: SentinelIQNotificationsFailing
+        expr: increase(sentineliq_notifications_total{status="failed"}[15m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Webhook notifications are failing"
+          description: "Verify SENTINELIQ_NOTIFY_WEBHOOK_URL and receiver availability."
+
+      - alert: SentinelIQNotificationsDead
+        expr: increase(sentineliq_notifications_total{status="dead"}[1h]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "Notifications reached the dead-letter limit"
+          description: "Five delivery attempts failed; inspect the outbox and replay manually."
+
+      - alert: SentinelIQRateLimited
+        expr: rate(sentineliq_rate_limited_total[5m]) > 1
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Frequent 429 responses"
+          description: "A client is exceeding its rate limit; confirm it is intentional."
+
+      - alert: SentinelIQP1Spike
+        expr: increase(sentineliq_incidents_created_total{priority="P1"}[15m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusual volume of P1 incidents"
+          description: "Check for a broad outage or a noisy alert source."

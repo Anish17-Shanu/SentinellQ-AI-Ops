@@ -1,0 +1,4 @@
+# Deployment-only dependencies for the optional Postgres adapter (e.g. Vercel).
+# The core application, tests, and Docker image run on the Python standard
+# library alone; JSON/SQLite storage requires nothing from this file.
+psycopg[binary]>=3.2
